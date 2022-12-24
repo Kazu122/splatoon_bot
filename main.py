@@ -1,22 +1,36 @@
+from discord.ext import tasks
 import discord
 import os
 from dotenv import load_dotenv
 from discord import app_commands
 from discord.ext import commands
-from discord_slash import SlashCommand, SlashContext
 
 load_dotenv()
 
 TOKEN = os.environ.get('TOKEN')
+GUILD_ID = os.environ.get('GUILD_ID')
+
+MY_GUILD = discord.Object(id=GUILD_ID)
+
+class MyClient(discord.Client):
+    def __init__(self, *, intents: discord.Intents):
+        super().__init__(intents=intents)
+        self.tree = app_commands.CommandTree(self)
+
+    async def setup_hook(self):
+        # self.tree.copy_global_to()
+        await self.tree.sync()
 
 intents = discord.Intents.all()  # Intentsオブジェクトを生成
-client = discord.Client(intents=intents, command_prefix='/')
-tree = app_commands.CommandTree(client)
+client = MyClient(intents=intents)
 
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
-    await tree.sync()
+
+@client.tree.command(name = "test", description = "test")
+async def test(ctx):
+    await ctx.response.send_message(f'hello World')
 
 @client.event
 async def on_message(message):
@@ -24,17 +38,5 @@ async def on_message(message):
         return
 
     await message.channel.send('Hello!')
-
-@tree.command(name = 'test', description='test')
-async def test(interaction):
-    await interaction.response.send_message(f'hello world')
-    
-@slash.slash(name="test")
-
-async def _test(ctx: SlashContext):
-
-    embed = discord.Embed(title="embed test")
-
-    await ctx.send(content="test", embeds=[embed])
 
 client.run(TOKEN)
