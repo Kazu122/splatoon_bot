@@ -1,5 +1,10 @@
 import discord
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TOKEN = os.environ.get('TOKEN')
 
 intents = discord.Intents.default()  # デフォルトのIntentsオブジェクトを生成
 client = discord.Client(intents=intents)
@@ -13,8 +18,6 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.content.startswith('$hello'):
-        await message.channel.send('Hello!')
+    await message.channel.send('Hello!')
 
-print(os.getenv('TOKEN'))
-client.run(os.getenv('TOKEN'))
+client.run(TOKEN)
