@@ -18,16 +18,25 @@ class WinButton(Button):
 
 
 class LoseButton(Button):
-    def __init__(self, label: str = "lose", style: ButtonStyle = ButtonStyle.primary):
+    def __init__(
+        self, stage: str, label: str = "lose", style: ButtonStyle = ButtonStyle.primary
+    ):
         super().__init__(label=label, style=style)
+        self.stage = stage
 
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message("lose")
 
 
 class InitButton(Button):
-    def __init__(self, label: str = "init", style: ButtonStyle = ButtonStyle.secondary):
+    def __init__(
+        self,
+        stage: str,
+        label: str = "init",
+        style: ButtonStyle = ButtonStyle.secondary,
+    ):
         super().__init__(label=label, style=style)
+        self.stage = stage
 
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message("init")

@@ -57,7 +57,7 @@ async def setup(ctx: Interaction):
         file = discord.File(fp=f"./img/{fname}", filename=fname)
         embed.set_image(url=f"attachment://{fname}")
         # embed.set_image(url=f"https://cdn.discordapp.com/embed/avatars/0.png")
-        await thread.send(file=file, view=StageButton())
+        await thread.send(file=file, view=StageButton(stage=stage))
 
     embed = discord.Embed(color=0x00FF00)
 
