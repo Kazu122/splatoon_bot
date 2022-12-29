@@ -8,8 +8,9 @@ from discord import Interaction
 from button.RegisterButton import RegisterButton
 from button.StageButton import StageButton
 from data.global_data import stage_list
-from data.global_data import result
-from data.global_data import resultMessage
+from data.global_data import DataStore
+from logic.create_embed import create_stage_embed
+from spreadsheet.connect_sheet import OperateSpreadSheet
 
 load_dotenv()
 
@@ -40,6 +41,7 @@ async def on_ready():
 
 @client.tree.command(name="test", description="test")
 async def test(ctx: Interaction):
+    OperateSpreadSheet.set_result_data()
     await ctx.response.send_message(f"hello World")
 
 
@@ -48,26 +50,28 @@ async def setup(ctx: Interaction):
     await ctx.response.send_message(f"setup中")
     channel = await ctx.guild.create_text_channel("対抗戦記録")
     members = channel.guild.members
-    for stage in stage_list:
-        thread = await channel.create_thread(name=stage)
-        for member in members:
-            await thread.add_user(member)
-        embed = discord.Embed(color=0x00FF00)
-        fname = f"{stage}.png"
-        file = discord.File(fp=f"./img/{fname}", filename=fname)
-        embed.set_image(url=f"attachment://{fname}")
-        # embed.set_image(url=f"https://cdn.discordapp.com/embed/avatars/0.png")
-        await thread.send(file=file, view=StageButton(stage=stage))
-
     embed = discord.Embed(color=0x00FF00)
+    result = DataStore.get_result()
 
+    # 記録用embedを生成
     for stage in stage_list:
         embed.add_field(
             name=f"{stage}", value=f"|{'|'.join(result[stage])}|", inline=False
         )
 
     result_message = await channel.send(embed=embed, view=RegisterButton())
-    resultMessage.set_result_message(result_message)
+    DataStore.set_result_message(result_message)
+
+    for index, stage in enumerate(reversed(stage_list)):
+        thread = await channel.create_thread(name=stage)
+        for member in members:
+            await thread.add_user(member)
+        fname = f"stage{index}.png"
+        file = discord.File(
+            fp=f"./img/stage/{stage}.png", filename=fname, spoiler=False
+        )
+        embed = create_stage_embed(fname)
+        await thread.send(file=file, embed=embed, view=StageButton(stage=stage))
 
     await ctx.followup.send(f"setup完了")
 

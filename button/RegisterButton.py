@@ -1,6 +1,10 @@
 import discord
 from discord import Interaction
 from discord import ButtonStyle
+from data.global_data import DataStore
+from logic.create_embed import create_result_embed
+from spreadsheet.PostGasScript import PostGasScript
+from spreadsheet.connect_sheet import OperateSpreadSheet
 
 
 class WinButton(discord.ui.Button):
@@ -10,7 +14,13 @@ class WinButton(discord.ui.Button):
         super().__init__(label=label, style=style, row=row)
 
     async def callback(self, ctx: Interaction):
-        await ctx.response.send_message("win")
+        await ctx.response.send_message("win", delete_after=60)
+        PostGasScript.post("addMatches")
+        DataStore.add_result()
+        message = DataStore.get_result_message()
+        embed = create_result_embed()
+        await message.edit(embed=embed)
+        # await ctx.followup.send("win", delete_after=60)
 
 
 class LoseButton(discord.ui.Button):
@@ -23,7 +33,12 @@ class LoseButton(discord.ui.Button):
         super().__init__(label=label, style=style, row=row)
 
     async def callback(self, ctx: Interaction):
-        await ctx.response.send_message("lose")
+        await ctx.response.send_message("lose", delete_after=60)
+
+        DataStore.add_result()
+        message = DataStore.get_result_message()
+        embed = create_result_embed()
+        await message.edit(embed=embed)
 
 
 class FinishButton(discord.ui.Button):
@@ -33,7 +48,12 @@ class FinishButton(discord.ui.Button):
         super().__init__(label=label, style=style, row=row)
 
     async def callback(self, ctx: Interaction):
-        await ctx.response.send_message("fin")
+        await ctx.response.send_message("fin", delete_after=60)
+        OperateSpreadSheet.set_result_data()
+        DataStore.init_result()
+        message = DataStore.get_result_message()
+        embed = create_result_embed()
+        await message.edit(embed=embed)
 
 
 class DeleteButton(discord.ui.Button):
@@ -42,8 +62,14 @@ class DeleteButton(discord.ui.Button):
     ):
         super().__init__(label=label, style=style, row=row)
 
+    # TODO 長さ1のときに動かないようにする
     async def callback(self, ctx: Interaction):
-        await ctx.response.send_message("del")
+        await ctx.response.send_message("del", delete_after=60)
+        PostGasScript.post("deleteMatches")
+        DataStore.delete_result()
+        message = DataStore.get_result_message()
+        embed = create_result_embed()
+        await message.edit(embed=embed)
 
 
 class InitButton(discord.ui.Button):
@@ -56,7 +82,11 @@ class InitButton(discord.ui.Button):
         super().__init__(label=label, style=style, row=row)
 
     async def callback(self, ctx: Interaction):
-        await ctx.response.send_message("init")
+        await ctx.response.send_message("init", delete_after=60)
+        DataStore.init_result()
+        message = DataStore.get_result_message()
+        embed = create_result_embed()
+        await message.edit(embed=embed)
 
 
 class RegisterButton(discord.ui.View):

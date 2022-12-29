@@ -2,7 +2,8 @@ import discord
 from discord import Interaction
 from discord import ButtonStyle
 from discord.ui import Button
-from data.global_data import stage_list
+from data.global_data import DataStore
+from logic.create_embed import create_result_embed
 
 
 class WinButton(Button):
@@ -13,8 +14,11 @@ class WinButton(Button):
         self.stage = stage
 
     async def callback(self, ctx: Interaction):
-        stage_list[self.stage] = "〇"
-        await ctx.response.send_message("win")
+        await ctx.response.send_message("win", delete_after=60)
+        DataStore.set_result(self.stage, "〇")
+        message = DataStore.get_result_message()
+        embed = create_result_embed()
+        await message.edit(embed=embed)
 
 
 class LoseButton(Button):
@@ -25,7 +29,11 @@ class LoseButton(Button):
         self.stage = stage
 
     async def callback(self, ctx: Interaction):
-        await ctx.response.send_message("lose")
+        await ctx.response.send_message("lose", delete_after=60)
+        DataStore.set_result(self.stage, "✕")
+        message = DataStore.get_result_message()
+        embed = create_result_embed()
+        await message.edit(embed=embed)
 
 
 class InitButton(Button):
@@ -39,7 +47,11 @@ class InitButton(Button):
         self.stage = stage
 
     async def callback(self, ctx: Interaction):
-        await ctx.response.send_message("init")
+        await ctx.response.send_message("init", delete_after=60)
+        DataStore.set_result(self.stage, "ー")
+        message = DataStore.get_result_message()
+        embed = create_result_embed()
+        await message.edit(embed=embed)
 
 
 class StageButton(discord.ui.View):
