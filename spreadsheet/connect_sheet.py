@@ -1,8 +1,8 @@
 import gspread
-from data.global_data import DataStore
+from data.ResultData import ResultData
 from oauth2client.service_account import ServiceAccountCredentials
 
-
+# スプレッドシート操作用クラス
 class OperateSpreadSheet:
     # use creds to create a client to interact with the Google Drive API
     scope = [
@@ -23,7 +23,7 @@ class OperateSpreadSheet:
     # TODO 更新処理未完成
     @classmethod
     def set_result_data(cls):
-        result = DataStore.get_result()
+        result = ResultData.get_result()
         sheet_data: list[list[any]] = cls.sheet.get_values("B9:B22")
         update_data: list[list[any]] = []
         for array in sheet_data:

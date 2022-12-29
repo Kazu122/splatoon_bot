@@ -1,30 +1,15 @@
 import discord
+from data.StageData import StageData
 from typing import Optional
 
-# ステージリスト
-stage_list: list[str] = [
-    "ゴンズイ地区",
-    "スメーシーワールド",
-    "キンメダイ美術館",
-    "マテガイ放水路",
-    "マヒマヒリゾート&スパ",
-    "海女美術大学",
-    "ナメロウ金属",
-    "チョウザメ造船",
-    "ヤガラ市場",
-    "ザトウマーケット",
-    "ユノハナ大渓谷",
-    "マサバ海峡大橋",
-    "ヒラメが丘団地",
-    "クサヤ温泉",
-]
-
-# データ格納用クラス
-class DataStore:
+# 結果記録用のデータ格納用クラス
+class ResultData:
     # リザルトのembedのメッセージオブジェクト
     # 編集時にアクセスしやすいように保持しておく
     _result_message: Optional[discord.Message] = None
-    _result: dict[str, list[str]] = dict(zip(stage_list, [["ー"] for _ in stage_list]))
+    _result: dict[str, list[str]] = dict(
+        zip(StageData.get_stage_list(), [["ー"] for _ in StageData.get_stage_list()])
+    )
 
     @classmethod
     def get_result_message(cls):

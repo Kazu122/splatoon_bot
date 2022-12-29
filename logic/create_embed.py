@@ -1,12 +1,12 @@
 import discord
-from data.global_data import stage_list
-from data.global_data import DataStore
+from data.StageData import StageData
+from data.ResultData import ResultData
 
-
+# 結果記録用のembedを生成
 def create_result_embed():
     embed = discord.Embed(color=0x00FF00)
-    result = DataStore.get_result()
-    for stage in stage_list:
+    result = ResultData.get_result()
+    for stage in StageData.get_stage_list:
         embed.add_field(
             name=f"{stage}", value=f"|{'|'.join(result[stage])}|", inline=False
         )
@@ -14,9 +14,9 @@ def create_result_embed():
     return embed
 
 
+# ステージ画像のembedを作成
 def create_stage_embed(fname: str):
     embed = discord.Embed(color=0x00FF00)
     embed.set_image(url=f"attachment://{fname}")
-    print(embed.image)
 
     return embed
