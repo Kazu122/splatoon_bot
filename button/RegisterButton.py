@@ -15,7 +15,7 @@ class WinButton(discord.ui.Button):
 
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message("win", delete_after=60)
-        PostGasScript.post("addMatches")
+        PostGasScript.post("addMatch")
         ResultData.add_result()
         message = ResultData.get_result_message()
         embed = create_result_embed()
@@ -34,7 +34,7 @@ class LoseButton(discord.ui.Button):
 
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message("lose", delete_after=60)
-
+        PostGasScript.post("addMatch")
         ResultData.add_result()
         message = ResultData.get_result_message()
         embed = create_result_embed()
@@ -51,6 +51,7 @@ class FinishButton(discord.ui.Button):
         await ctx.response.send_message("fin", delete_after=60)
         OperateSpreadSheet.set_result_data()
         ResultData.init_result()
+        PostGasScript.post("resultRegister")
         message = ResultData.get_result_message()
         embed = create_result_embed()
         await message.edit(embed=embed)
@@ -65,8 +66,10 @@ class DeleteButton(discord.ui.Button):
     # TODO 長さ1のときに動かないようにする
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message("del", delete_after=60)
-        PostGasScript.post("deleteMatches")
-        ResultData.delete_result()
+        if not (ResultData.delete_result()):
+            return
+
+        PostGasScript.post("deleteMatch")
         message = ResultData.get_result_message()
         embed = create_result_embed()
         await message.edit(embed=embed)

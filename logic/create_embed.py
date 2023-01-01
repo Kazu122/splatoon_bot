@@ -6,7 +6,7 @@ from data.ResultData import ResultData
 def create_result_embed():
     embed = discord.Embed(color=0x00FF00)
     result = ResultData.get_result()
-    for stage in StageData.get_stage_list:
+    for stage in StageData.get_stage_list():
         embed.add_field(
             name=f"{stage}", value=f"|{'|'.join(result[stage])}|", inline=False
         )

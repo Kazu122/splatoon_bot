@@ -1,10 +1,10 @@
 import requests
 import json
 
-# TODO gas側でactiveSheetをopenByIdに変更する
-# doPostを追加する
+# TODO # doPostを追加する
+# urlはデプロイの度に変更すること
 class PostGasScript:
-    url = "https://script.google.com/macros/s/AKfycbzuvpMQR5CaLl4dZkBaFjXk3CwWY4RcN6nb7ywZGRk6PXfkqU8ynOxOslZ4mk0n8g3o0g/exec"
+    url = "https://script.google.com/macros/s/AKfycbz0CfY5cbw4aydZ_dHzqJgEVOaiZ2RW-evNzRN3IoVArxq-3dKhFEXVFWA9aCX8Sk0n5w/exec"
     headers = {"Content-Type": "application/json"}
 
     @classmethod

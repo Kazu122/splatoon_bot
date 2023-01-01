@@ -34,8 +34,11 @@ class ResultData:
 
     @classmethod
     def delete_result(cls):
+        if len(cls._result.values()[0]) == 1:
+            return False
         for array in cls._result.values():
             del array[-1]
+        return True
 
     @classmethod
     def init_result(cls):

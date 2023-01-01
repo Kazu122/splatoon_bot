@@ -1,16 +1,12 @@
 from discord.ext import tasks
 import discord
 import os
+import json
 from dotenv import load_dotenv
 from discord import app_commands
 from discord.ext import commands
 from discord import Interaction
-from button.RegisterButton import RegisterButton
-from button.StageButton import StageButton
-from data.ResultData import StageData
-from data.ResultData import ResultData
-from logic.create_embed import create_stage_embed
-from spreadsheet.connect_sheet import OperateSpreadSheet
+from logic.create_channel import *
 
 load_dotenv()
 
@@ -33,10 +29,49 @@ class MyClient(discord.Client):
 intents = discord.Intents.all()  # Intentsオブジェクトを生成
 client = MyClient(intents=intents)
 
+# サーバーの初期化を行う
+# TODO チャンネルが存在する場合は生成処理スキップ
+async def init(guild: Guild):
+    server_structure = {}
+
+    if not (os.path.exists("./channelIds.json")):
+        with open("./channelIds.json", "w", encoding="utf-8") as f:
+            json.dump({}, f, ensure_ascii=False, indent=4)
+
+    with open("./channelIds.json", "r", encoding="utf-8") as f:
+        channel_ids = json.load(f)
+        members = guild.members
+
+        server_structure["対抗戦記録用"] = await create_main_channel(
+            guild, members, channel_ids
+        )
+        server_structure["データ"] = await create_data_channel(guild, members, channel_ids)
+        server_structure["アーカイブ"] = await create_archive_channel(
+            guild, members, channel_ids
+        )
+        server_structure["ドキュメント"] = await create_document_channel(
+            guild, members, channel_ids
+        )
+        server_structure["管理用"] = await create_management_channel(
+            guild, members, channel_ids
+        )
+
+        print(server_structure)
+
+    with open("./channelIds.json", "w", encoding="utf-8") as f:
+        json.dump(server_structure, f, ensure_ascii=False, indent=4)
+
+
 # TODO: チャンネルが存在する場合に取得してresult_messageをセットする
 @client.event
 async def on_ready():
     print("We have logged in as {0.user}".format(client))
+    # TODO 起動時も初期化を行う
+    guilds = client.guilds
+    for guild in guilds:
+        await init(guild)
+
+    print("initialized complete")
 
 
 # testコマンド: テスト用
@@ -49,39 +84,18 @@ async def test(ctx: Interaction):
 @client.tree.command(name="setup", description="初期設定を行います")
 async def setup(ctx: Interaction):
     await ctx.response.send_message(f"setup中")
-    mainCategory = await ctx.guild.create_category("対抗戦記録用")
-    dataCategory = await ctx.guild.create_category("データ")
-    archiveCategory = await ctx.guild.create_category("アーカイブ")
-    documentCategory = await ctx.guild.create_category("ドキュメント")
-    managementCategory = await ctx.guild.create_category("管理用")
-    channel = await mainCategory.create_text_channel("対抗戦記録")
-    members = channel.guild.members
-    embed = discord.Embed(color=0x00FF00)
-    result = ResultData.get_result()
-
-    stage_list = StageData.get_stage_list()
-
-    # 記録用embedを生成
-    for stage in stage_list:
-        embed.add_field(
-            name=f"{stage}", value=f"|{'|'.join(result[stage])}|", inline=False
-        )
-
-    result_message = await channel.send(embed=embed, view=RegisterButton())
-    ResultData.set_result_message(result_message)
-
-    for index, stage in enumerate(reversed(stage_list)):
-        thread = await channel.create_thread(name=stage)
-        for member in members:
-            await thread.add_user(member)
-        fname = f"stage{index}.png"
-        file = discord.File(
-            fp=f"./img/stage/{stage}.png", filename=fname, spoiler=False
-        )
-        embed = create_stage_embed(fname)
-        await thread.send(file=file, embed=embed, view=StageButton(stage=stage))
-
+    init(ctx.guild)
     await ctx.followup.send(f"setup完了")
+
+
+@client.tree.command(name="clear", description="チャンネルをすべて削除します")
+async def clear(ctx: Interaction):
+    channels = await ctx.guild.fetch_channels()
+    for channel in channels:
+        await channel.delete()
+
+    await ctx.guild.create_text_channel("command")
+    await ctx.guild.create_voice_channel("test")
 
 
 # @client.event
