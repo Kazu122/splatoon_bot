@@ -51,7 +51,7 @@ class FinishButton(discord.ui.Button):
         await ctx.response.send_message("fin", delete_after=60)
         OperateSpreadSheet.set_result_data()
         ResultData.init_result()
-        PostGasScript.post("resultRegister")
+        PostGasScript.post("registerResult")
         message = ResultData.get_result_message()
         embed = create_result_embed()
         await message.edit(embed=embed)

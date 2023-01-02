@@ -20,3 +20,11 @@ def create_stage_embed(fname: str):
     embed.set_image(url=f"attachment://{fname}")
 
     return embed
+
+
+def create_player_embed(player: str, fname: str):
+    embed = discord.Embed(title=player, color=0x00FF00)
+    embed.add_field(name="weapon", value="  sub weapon\n  special weapon")
+    embed.set_thumbnail(url=f"attachment://{fname}")
+
+    return embed

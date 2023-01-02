@@ -7,6 +7,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord import Interaction
 from logic.create_channel import *
+from data import SqliteConnection
 
 load_dotenv()
 
@@ -20,10 +21,16 @@ class MyClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
+        SqliteConnection.set_connection()
 
     async def setup_hook(self):
         # self.tree.copy_global_to()
         await self.tree.sync()
+
+    async def close(self) -> None:
+        await super().close()
+        SqliteConnection.close()
+        return
 
 
 intents = discord.Intents.all()  # Intentsオブジェクトを生成
@@ -88,6 +95,7 @@ async def setup(ctx: Interaction):
     await ctx.followup.send(f"setup完了")
 
 
+# clearコマンド: チャンネルを全消去する
 @client.tree.command(name="clear", description="チャンネルをすべて削除します")
 async def clear(ctx: Interaction):
     channels = await ctx.guild.fetch_channels()
@@ -96,6 +104,14 @@ async def clear(ctx: Interaction):
 
     await ctx.guild.create_text_channel("command")
     await ctx.guild.create_voice_channel("test")
+
+
+# memberコマンド: メンバーを登録する
+@client.tree.command(name="member", description="チームメンバーをbotへ登録します")
+async def registerMember(
+    ctx: Interaction, member1: str, member2: str, member3: str, member4: str
+):
+    await ctx.response.send_message(f"hello World")
 
 
 # @client.event

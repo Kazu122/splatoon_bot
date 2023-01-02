@@ -6,7 +6,7 @@ from button.RegisterButton import RegisterButton
 from button.StageButton import StageButton
 from data.ResultData import StageData
 from data.ResultData import ResultData
-from logic.create_embed import create_stage_embed
+from logic.create_embed import create_player_embed, create_stage_embed
 
 
 def get_category_id(category_ids: dict, name: str):
@@ -125,9 +125,11 @@ async def create_main_channel(
 
         # スレッドのメッセージ
         thread_messages = {}
-        message = channel.get_partial_message(message_id)
+        message = None
         # メッセージが存在しない場合は新規作成し、紐づいていたスレッドを削除する
+        # TODO メッセージがidで取得しようとすると正しく取得されない場合がある
         try:
+            message = await channel.fetch_message(message_id)
             await message.edit(view=StageButton(stage=stage))
         # HTTPExceptionが発生した場合はメッセージが存在しないため生成
         except discord.HTTPException:
@@ -145,6 +147,10 @@ async def create_main_channel(
                 channel_ids["対抗戦記録用"]["channels"]["対抗戦記録"]["messages"], stage
             )
             thread = await message.create_thread(name=stage)
+            embeds = []
+            for index in range(4):
+                embeds.append(create_player_embed("test", f"weapon{index}"))
+            await thread.send(embeds=embeds)
             # for member in members:
             #     await thread.add_user(member)
 
@@ -164,7 +170,7 @@ async def create_data_channel(
     dict = {"id": category.id, "channels": {}}
 
     # チャンネル名のリスト
-    channel_list = ["勝率推移", "MAP", "武器", "編成", "リンク"]
+    channel_list = ["勝率推移", "マップ", "武器", "編成", "リンク"]
 
     for name in channel_list:
         channel = guild.get_channel(
