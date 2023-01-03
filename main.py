@@ -81,6 +81,24 @@ async def on_ready():
     print("initialized complete")
 
 
+# サーバーIDをデータベースへ登録する
+@client.event
+def on_guild_join():
+    pass
+
+
+# サーバーの更新があったときにDBも更新
+@client.event
+def on_guild_update():
+    pass
+
+
+# サーバーからクライアントが削除されたときにDBから削除
+@client.event
+def on_guild_remove():
+    pass
+
+
 # testコマンド: テスト用
 @client.tree.command(name="test", description="test")
 async def test(ctx: Interaction):
