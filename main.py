@@ -83,20 +83,52 @@ async def on_ready():
 
 # サーバーIDをデータベースへ登録する
 @client.event
-def on_guild_join():
-    pass
+async def on_guild_join(guild: Guild):
+    cur = None
+    try:
+        cur = SqliteConnection.get_connection().cursor()
+        sql = (
+            "PRAGMA forreign_keys=true;" "INSERT INTO TBL_GUILD(id, name) values(?, ?);"
+        )
+        cur.execute(sql, guild.id, guild.name)
+    except Exception as e:
+        print(e)
+    finally:
+        if cur != None:
+            cur.close()
 
 
 # サーバーの更新があったときにDBも更新
 @client.event
-def on_guild_update():
-    pass
+async def on_guild_update(before: Guild, after: Guild):
+    cur = None
+    try:
+        cur = SqliteConnection.get_connection().cursor()
+        sql = (
+            "PRAGMA forreign_keys=true;"
+            "UPDATE INTO TBL_GUILD SET name = ? WHERE id = ?;"
+        )
+        cur.execute(sql, after.name, before.id)
+    except Exception as e:
+        print(e)
+    finally:
+        if cur != None:
+            cur.close()
 
 
 # サーバーからクライアントが削除されたときにDBから削除
 @client.event
-def on_guild_remove():
-    pass
+async def on_guild_remove(guild: Guild):
+    cur = None
+    try:
+        cur = SqliteConnection.get_connection().cursor()
+        sql = "PRAGMA forreign_keys=true;" "DELETE FROM TBL_GUILD WHERE id = ?;"
+        cur.execute(sql, guild.id)
+    except Exception as e:
+        print(e)
+    finally:
+        if cur != None:
+            cur.close()
 
 
 # testコマンド: テスト用
@@ -109,7 +141,7 @@ async def test(ctx: Interaction):
 @client.tree.command(name="setup", description="初期設定を行います")
 async def setup(ctx: Interaction):
     await ctx.response.send_message(f"setup中")
-    init(ctx.guild)
+    await init(ctx.guild)
     await ctx.followup.send(f"setup完了")
 
 

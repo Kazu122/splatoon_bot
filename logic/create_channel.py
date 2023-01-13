@@ -7,6 +7,7 @@ from button.StageButton import StageButton
 from data.ResultData import StageData
 from data.ResultData import ResultData
 from logic.create_embed import create_player_embed, create_stage_embed
+from logic.utils import is_not_pined_message
 
 
 def get_category_id(category_ids: dict, name: str):
@@ -71,92 +72,19 @@ async def create_main_channel(
     # 存在しない場合はテキストチャンネルを生成
     if channel == None:
         channel = await category.create_text_channel("対抗戦記録")
-        result_message = await channel.send(embed=embed, view=RegisterButton())
-        await result_message.pin()
-        ResultData.set_result_message(result_message)
     else:
-        result_message = [
-            message async for message in channel.history(limit=1, oldest_first=True)
-        ][0]
-        await result_message.edit(embed=embed, view=RegisterButton())
-        ResultData.set_result_message(result_message)
+        await channel.purge()
 
-    threads = {}
-    messages = {}
-    channels["対抗戦記録"] = {"id": channel.id, "messages": messages, "threads": threads}
+    result_message = await channel.send(embed=embed, view=RegisterButton())
+    await result_message.pin()
+    ResultData.set_result_message(result_message)
 
-    thread = None
-    thread_id = get_thread_id(
-        channel_ids["対抗戦記録用"]["channels"]["対抗戦記録"]["threads"], "全体"
-    )
+    channels[channel.name] = {
+        "id": channel.id,
+        "messages": {},
+        "threads": {},
+    }
 
-    try:
-        thread = await guild.fetch_channel(thread_id)
-    except (discord.NotFound, discord.InvalidData, discord.HTTPException):
-        pass
-
-    # 存在しない場合全体反省用のスレッドを生成
-    if thread == None:
-        thread = await result_message.create_thread(name="全体")
-
-    threads["全体"] = {"id": thread.id}
-
-    for index, stage in enumerate(stage_list):
-        thread = None
-        thread_id = get_thread_id(
-            channel_ids["対抗戦記録用"]["channels"]["対抗戦記録"]["threads"], stage
-        )
-
-        try:
-            thread = await guild.fetch_channel(thread_id)
-        except (discord.NotFound, discord.InvalidData, discord.HTTPException):
-            # idがNoneまたはチャンネルが見つからなかった場合なにもしない
-            pass
-
-        fname = f"stage{index}.png"
-        file = discord.File(
-            fp=f"./img/stage/{stage}.png", filename=fname, spoiler=False
-        )
-        embed = create_stage_embed(fname)
-
-        message_id = get_message_id(
-            channel_ids["対抗戦記録用"]["channels"]["対抗戦記録"]["messages"], stage
-        )
-
-        # スレッドのメッセージ
-        thread_messages = {}
-        message = None
-        # メッセージが存在しない場合は新規作成し、紐づいていたスレッドを削除する
-        # TODO メッセージがidで取得しようとすると正しく取得されない場合がある
-        try:
-            message = await channel.fetch_message(message_id)
-            await message.edit(view=StageButton(stage=stage))
-        # HTTPExceptionが発生した場合はメッセージが存在しないため生成
-        except discord.HTTPException:
-            message = await channel.send(
-                file=file, embed=embed, view=StageButton(stage=stage)
-            )
-            messages[stage] = {"id": message.id}
-            if thread != None:
-                await thread.delete()
-                thread = None
-
-        # スレッドが存在しない場合、生成
-        if thread == None:
-            message_id = get_message_id(
-                channel_ids["対抗戦記録用"]["channels"]["対抗戦記録"]["messages"], stage
-            )
-            thread = await message.create_thread(name=stage)
-            embeds = []
-            for index in range(4):
-                embeds.append(create_player_embed("test", f"weapon{index}"))
-            await thread.send(embeds=embeds)
-            # for member in members:
-            #     await thread.add_user(member)
-
-        # thread_message = thread.get_partial_message(thread.id)
-        # await thread_message.edit(view=StageButton(stage=stage))
-        threads[stage] = {"id": thread.id, "messages": thread_messages}
     return dict
 
 

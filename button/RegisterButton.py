@@ -3,8 +3,24 @@ from discord import Interaction
 from discord import ButtonStyle
 from data.ResultData import ResultData
 from logic.create_embed import create_result_embed
+from logic.create_stage_message import create_stage_message
+from logic.utils import is_not_pined_message
 from spreadsheet.PostGasScript import PostGasScript
 from spreadsheet.connect_sheet import OperateSpreadSheet
+
+
+class AreaButton(discord.ui.Button):
+    def __init__(
+        self,
+        label: str = "Area",
+        style: ButtonStyle = ButtonStyle.primary,
+        row: int = 1,
+    ):
+        super().__init__(label=label, style=style, row=row)
+
+    async def callback(self, ctx: Interaction):
+        await ctx.response.send_message("Area", delete_after=60)
+        await create_stage_message(ctx)
 
 
 class WinButton(discord.ui.Button):
@@ -52,6 +68,8 @@ class FinishButton(discord.ui.Button):
         OperateSpreadSheet.set_result_data()
         ResultData.init_result()
         PostGasScript.post("registerResult")
+        # 結果メッセージ(ピン止めされているメッセージ)以外を消去
+        await ctx.channel.purge(check=is_not_pined_message)
         message = ResultData.get_result_message()
         embed = create_result_embed()
         await message.edit(embed=embed)
@@ -95,6 +113,7 @@ class InitButton(discord.ui.Button):
 class RegisterButton(discord.ui.View):
     def __init__(self):
         super().__init__()
+        self.add_item(AreaButton())
         self.add_item(WinButton())
         self.add_item(LoseButton())
         self.add_item(FinishButton())
