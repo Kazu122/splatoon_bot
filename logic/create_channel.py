@@ -101,11 +101,18 @@ async def create_data_channel(
     channel_list = ["勝率推移", "マップ", "武器", "編成", "リンク"]
 
     for name in channel_list:
-        channel = guild.get_channel(
-            get_text_channel_id(channel_ids["データ"]["channels"], name)
-        )
-        if channel == None:
-            channel = await category.create_text_channel(name)
+        if name == "武器":
+            channel = guild.get_channel(
+                get_text_channel_id(channel_ids["データ"]["channels"], name)
+            )
+            if channel == None:
+                channel = await category.create_text_channel(name)
+        else:
+            channel = guild.get_channel(
+                get_text_channel_id(channel_ids["データ"]["channels"], name)
+            )
+            if channel == None:
+                channel = await category.create_text_channel(name)
 
         dict["channels"][channel.name] = {
             "id": channel.id,

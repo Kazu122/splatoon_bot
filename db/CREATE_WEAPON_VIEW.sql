@@ -5,6 +5,6 @@ SELECT TW.id AS "id", TW.name AS "weapon", TSW.name AS "sub", TSP.name AS "speci
     JOIN TBL_WEAPON_TYPE AS TWT ON TW.typeId = TWT.id;
 
 CREATE VIEW VIEW_PLAYER AS 
-SELECT TP.guildId AS "guildId", TP.name AS "player", VW.weapon AS "weapon", VW.sub AS "sub", VW.sub AS "special" FROM TBL_FORMATION AS TF
+SELECT TP.guildId AS "guildId", TP.name AS "player", VW.weapon AS "weapon", VW.sub AS "sub", VW.special AS "special" FROM TBL_FORMATION AS TF
     JOIN TBL_PLAYER AS TP ON TF.playerId = TP.id
     JOIN VIEW_WEAPON AS VW ON TF.weaponId = VW.id;

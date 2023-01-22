@@ -16,7 +16,7 @@ INSERT OR IGNORE INTO TBL_STAGE(name)
     ("ヒラメが丘団地"),
     ("クサヤ温泉");
 
-INSERT OR IGNORE INTO TBL_STAGE(rule)
+INSERT OR IGNORE INTO TBL_RULE(rule)
     VALUES("ナワバリバトル"),
     ("ガチエリア"),
     ("ガチヤグラ"),

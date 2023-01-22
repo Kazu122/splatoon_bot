@@ -1,4 +1,5 @@
 import gspread
+from data import SqliteConnection
 from data.ResultData import ResultData
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -19,8 +20,8 @@ class OperateSpreadSheet:
     # Find a workbook by name and open the first sheet
     # Make sure you use the right name here.
     sheet = client.open_by_key(SHEET_KEY).worksheet("入力")
+    formationSheet = client.open_by_key(SHEET_KEY).worksheet("武器編成")
 
-    # TODO 更新処理未完成
     @classmethod
     def set_result_data(cls):
         result = ResultData.get_result()
@@ -32,3 +33,18 @@ class OperateSpreadSheet:
 
         # print(update_data)
         cls.sheet.update("C9", update_data)
+
+    @classmethod
+    def get_formation_data(cls):
+        stage_data = SqliteConnection.get_stage_data()
+        stage_num = len(stage_data)
+        sheet_data: list[list[any]] = cls.formationSheet.get_values(
+            f"B5:D{stage_num * 4 + 4}"
+        )
+        stage = None
+        for data in sheet_data:
+            if data[0] != "":
+                stage = data[0]
+            else:
+                data[0] = stage
+        return sheet_data

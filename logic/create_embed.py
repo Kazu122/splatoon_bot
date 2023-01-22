@@ -22,9 +22,13 @@ def create_stage_embed(fname: str):
     return embed
 
 
-def create_player_embed(player: str, fname: str):
+def create_player_embed(player: str, WeaponData: list[str, str, str], fname: str):
     embed = discord.Embed(title=player, color=0x00FF00)
-    embed.add_field(name="weapon", value="  sub weapon\n  special weapon")
-    embed.set_thumbnail(url=f"attachment://{fname}")
+    print(WeaponData)
+    name, sub, special = WeaponData
+    if name != "未設定":
+        embed.set_thumbnail(url=f"attachment://{fname}")
+
+    embed.add_field(name=name, value=f"  {sub}\n  {special}")
 
     return embed

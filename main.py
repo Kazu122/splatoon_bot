@@ -90,7 +90,7 @@ async def on_guild_join(guild: Guild):
         sql = (
             "PRAGMA forreign_keys=true;" "INSERT INTO TBL_GUILD(id, name) values(?, ?);"
         )
-        cur.execute(sql, guild.id, guild.name)
+        cur.execute(sql, (guild.id, guild.name))
     except Exception as e:
         print(e)
     finally:
@@ -123,7 +123,7 @@ async def on_guild_remove(guild: Guild):
     try:
         cur = SqliteConnection.get_connection().cursor()
         sql = "PRAGMA forreign_keys=true;" "DELETE FROM TBL_GUILD WHERE id = ?;"
-        cur.execute(sql, guild.id)
+        cur.execute(sql, (guild.id,))
     except Exception as e:
         print(e)
     finally:
@@ -158,10 +158,105 @@ async def clear(ctx: Interaction):
 
 # memberコマンド: メンバーを登録する
 @client.tree.command(name="member", description="チームメンバーをbotへ登録します")
-async def registerMember(
+async def register_member(
     ctx: Interaction, member1: str, member2: str, member3: str, member4: str
 ):
     await ctx.response.send_message(f"hello World")
+    members = [member1, member2, member3, member4]
+    conn = SqliteConnection.get_connection()
+    cur = conn.cursor()
+    try:
+        for member in members:
+            sql = f"""
+                SELECT * FROM TBL_PLAYER
+                WHERE guildId = ? AND name = ?
+            """
+            cur.execute(sql, (ctx.guild.id, member))
+            player = cur.fetchone()
+            if player == None:
+                sql = f"""
+                    INSERT INTO TBL_PLAYER(guildId, name)
+                    VALUES(?,?)
+                """
+                cur.execute(sql, (ctx.guild.id, member))
+
+            else:
+                sql = f"""
+                    UPDATE TBL_PLAYER
+                    SET name = ?, guildId = ?
+                    WHERE id = ?
+                """
+                cur.execute(sql, (member, ctx.guild.id, player[0]))
+        conn.commit()
+    except:
+        pass
+
+
+# weaponコマンド:
+@client.tree.command(name="weapon", description="武器編成をbotへ登録します")
+@discord.app_commands.choices(rule=[], stage=[], member=[], weapon=[])
+async def edit_weapon(
+    ctx: Interaction, rule: str, stage: str, member: str, weapon: str
+):
+    await ctx.response.send_message(f"edit")
+    conn = SqliteConnection.get_connection()
+    cur = conn.cursor()
+    try:
+        # playerデータの取得
+        sql = f"""
+            SELECT id, guildId, name FROM TBL_PLAYER
+            WHERE name = ?;
+        """
+        cur.execute(sql, (member,))
+        playerId = cur.fetchone()[0]
+
+        # 武器データの取得
+        sql = f"""
+            SELECT * FROM TBL_WEAPON
+            WHERE name = ?;
+        """
+        cur.execute(sql, (weapon,))
+        weaponId = cur.fetchone()[0]
+
+        # ステージデータの取得
+        sql = f"""
+            SELECT * FROM TBL_STAGE
+            WHERE name = ?;
+        """
+        cur.execute(sql, (stage,))
+        stageId = cur.fetchone()[0]
+
+        # ルールデータの取得
+        sql = f"""
+            SELECT * FROM TBL_RULE
+            WHERE rule = ?;
+        """
+        cur.execute(sql, (rule,))
+        ruleId = cur.fetchone()[0]
+
+        sql = f"""
+            SELECT * FROM TBL_FORMATION
+            WHERE playerId = ? AND ruleId = ? AND stageId = ? AND weaponId = ?;
+        """
+        cur.execute(sql, (playerId, ruleId, stageId, weaponId))
+        formation = cur.fetchone()
+        if formation == None:
+            sql = f"""
+                INSERT INTO TBL_FORMATION(playerId, ruleId, stageId, weaponId)
+                VALUES(?,?,?,?)
+            """
+            cur.execute(sql, (playerId, ruleId, stageId, weaponId))
+
+        else:
+            sql = f"""
+                UPDATE TBL_FORMATION
+                SET weaponId = ?
+                WHERE id = ?
+            """
+            cur.execute(sql, (formation[4], formation[0]))
+        conn.commit()
+    except:
+        await ctx.followup.send(f"武器変更に失敗しました")
 
 
 # @client.event
