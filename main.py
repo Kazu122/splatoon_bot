@@ -17,10 +17,10 @@ GUILD_ID = os.environ.get("GUILD_ID")
 MY_GUILD = discord.Object(id=GUILD_ID)
 
 
-class MyClient(discord.Client):
+class MyClient(commands.Bot):
     def __init__(self, *, intents: discord.Intents):
-        super().__init__(intents=intents)
-        self.tree = app_commands.CommandTree(self)
+        super().__init__("/", intents=intents)
+        # self.tree = app_commands.CommandTree(self)
         SqliteConnection.set_connection()
 
     async def setup_hook(self):
