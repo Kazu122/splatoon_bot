@@ -77,8 +77,11 @@ class FinishButton(discord.ui.Button):
         PostGasScript.post("registerResult")
         # 結果メッセージ(ピン止めされているメッセージ)以外を消去
         # TODO: スレッドも削除
+        for thread in ctx.channel.threads:
+            await thread.delete()
         await ctx.channel.purge(check=is_not_pined_message)
         message = ResultData.get_result_message()
+        oldEmbed = message.embeds
         embed = create_result_embed()
         await message.edit(embed=embed)
 
