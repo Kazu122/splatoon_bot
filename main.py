@@ -259,8 +259,8 @@ async def edit_weapon(
         await ctx.followup.send(f"武器変更に失敗しました")
 
 
-# @client.event
-# async def on_message(message):
+# @client.listen("on_message")
+# async def on_message(message: discord.Message):
 #     if message.author == client.user:
 #         return
 

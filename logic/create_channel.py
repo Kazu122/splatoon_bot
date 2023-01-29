@@ -1,8 +1,9 @@
 from typing import Sequence
 import discord
 from discord import CategoryChannel, Guild, Interaction, Member, TextChannel
+from data.SqliteConnection import SqliteConnection
 from data.StageData import StageData
-from button.RegisterButton import RegisterButton
+from button.RegisterButton import SelectRuleButton
 from button.StageButton import StageButton
 from data.ResultData import StageData
 from data.ResultData import ResultData
@@ -60,7 +61,7 @@ async def create_main_channel(
     channel = guild.get_channel(
         get_text_channel_id(channel_ids["対抗戦記録用"]["channels"], "対抗戦記録")
     )
-
+    SqliteConnection.set_channnel(guild.id, channel.id, "対抗戦記録")
     embed = discord.Embed(color=0x00FF00)
     result = ResultData.get_result()
 
@@ -75,7 +76,7 @@ async def create_main_channel(
     else:
         await channel.purge()
 
-    result_message = await channel.send(embed=embed, view=RegisterButton())
+    result_message = await channel.send(embed=embed, view=SelectRuleButton())
     await result_message.pin()
     ResultData.set_result_message(result_message)
 
@@ -101,6 +102,7 @@ async def create_data_channel(
     channel_list = ["勝率推移", "マップ", "武器", "編成", "リンク"]
 
     for name in channel_list:
+        channel = None
         if name == "武器":
             channel = guild.get_channel(
                 get_text_channel_id(channel_ids["データ"]["channels"], name)
@@ -113,6 +115,7 @@ async def create_data_channel(
             )
             if channel == None:
                 channel = await category.create_text_channel(name)
+        SqliteConnection.set_channnel(guild.id, channel.id, name)
 
         dict["channels"][channel.name] = {
             "id": channel.id,
@@ -140,6 +143,7 @@ async def create_archive_channel(
     if resultChannel == None:
         resultChannel = await category.create_text_channel("対抗戦結果")
     channels["対抗戦結果"] = {"id": resultChannel.id, "messages": {}, "threads": {}}
+    SqliteConnection.set_channnel(guild.id, resultChannel.id, "対抗戦結果")
 
     introspectionChannel = guild.get_channel(
         get_text_channel_id(channel_ids["アーカイブ"]["channels"], "対抗戦反省")
@@ -152,7 +156,7 @@ async def create_archive_channel(
         "messages": {},
         "threads": threads,
     }
-
+    SqliteConnection.set_channnel(guild.id, introspectionChannel.id, "対抗戦反省")
     # ResultData.set_result_message(result_message)
 
     thread = None
@@ -211,6 +215,7 @@ async def create_document_channel(
         if channel == None:
             channel = await category.create_text_channel(name)
 
+        SqliteConnection.set_channnel(guild.id, channel.id, name)
         dict["channels"][name] = {"id": channel.id, "messages": {}, "threads": {}}
 
     return dict
@@ -234,6 +239,7 @@ async def create_management_channel(
         if channel == None:
             channel = await category.create_text_channel(name)
 
+        SqliteConnection.set_channnel(guild.id, channel.id, name)
         dict["channels"][name] = {"id": channel.id, "messages": {}, "threads": {}}
 
     return dict

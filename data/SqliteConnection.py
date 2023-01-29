@@ -222,3 +222,39 @@ class SqliteConnection:
             return weaponData
         except:
             raise Exception()
+
+    # channelのidを取得する
+    @classmethod
+    def get_channnel(cls, guildId: int, name: str) -> int:
+        conn = cls.get_connection()
+        cur = conn.cursor()
+        try:
+            sql = f"""
+                SELECT channelId FROM TBL_CHANNEL
+                    WHERE guildId = ? AND name = ?;
+            """
+            cur.execute(sql, (str(guildId), name))
+            channel = cur.fetchone()
+
+            # Noneの場合データベースに未登録
+            if channel == None:
+                return None
+
+            return int(channel[0])
+        except:
+            raise Exception()
+
+    @classmethod
+    def set_channnel(cls, guildId: int, channelId: int, name: str):
+        conn = cls.get_connection()
+        cur = conn.cursor()
+        try:
+            sql = f"""
+                    INSERT OR IGNORE INTO TBL_CHANNEL(guildId, channelId, name)
+                    VALUES(?, ?, ?);
+                """
+            cur.execute(sql, (str(guildId), str(channelId), name))
+            conn.commit()
+            return
+        except:
+            raise Exception()
