@@ -1,6 +1,7 @@
 from typing import Sequence
 import discord
 from discord import CategoryChannel, Guild, Interaction, Member, TextChannel
+from data.ChannelData import ChannelData
 from data.SqliteConnection import SqliteConnection
 from data.StageData import StageData
 from button.RegisterButton import SelectRuleButton
@@ -46,22 +47,33 @@ def get_message_id(message_ids: dict, name: str):
 
 
 # TODO ファイルが存在しない場合にも動くようにする(keyError 対策を行う)
-async def create_main_channel(
-    guild: Guild, members: Sequence[Member], channel_ids: dict
-):
+async def create_main_channel(guild: Guild, members: Sequence[Member]):
+    categoryType = ChannelData.get_channel_type("category")
+    textChannelType = ChannelData.get_channel_type("text")
+    # ----- 記録用カテゴリ作成 -----
+    categoryId = SqliteConnection.get_channel(guild.id, "対抗戦記録用", categoryType)
+    category = None
+    isInsert = True
+    if categoryId != None:
+        isInsert = False
+        category = guild.get_channel(categoryId)
 
-    category = guild.get_channel(get_category_id(channel_ids, "対抗戦記録用"))
     # 存在しない場合はカテゴリを生成
     if category == None:
         category = await guild.create_category("対抗戦記録用")
-    channels = {}
-    dict = {"id": category.id, "channels": channels}
+        SqliteConnection.set_channel(
+            guild.id, category.id, categoryType, "対抗戦記録用", isInsert=isInsert
+        )
 
+    # ----- 記録用チャンネル作成 -----
     stage_list = StageData.get_stage_list()
-    channel = guild.get_channel(
-        get_text_channel_id(channel_ids["対抗戦記録用"]["channels"], "対抗戦記録")
-    )
-    SqliteConnection.set_channnel(guild.id, channel.id, "対抗戦記録")
+    channelId = SqliteConnection.get_channel(guild.id, "対抗戦記録", textChannelType)
+    channel = None
+    isInsert = True
+    if channelId != None:
+        isInsert = False
+        channel = guild.get_channel(channelId)
+
     embed = discord.Embed(color=0x00FF00)
     result = ResultData.get_result()
 
@@ -73,6 +85,9 @@ async def create_main_channel(
     # 存在しない場合はテキストチャンネルを生成
     if channel == None:
         channel = await category.create_text_channel("対抗戦記録")
+        SqliteConnection.set_channel(
+            guild.id, channel.id, textChannelType, "対抗戦記録", isInsert=isInsert
+        )
     else:
         await channel.purge()
 
@@ -80,166 +95,204 @@ async def create_main_channel(
     await result_message.pin()
     ResultData.set_result_message(result_message)
 
-    channels[channel.name] = {
-        "id": channel.id,
-        "messages": {},
-        "threads": {},
-    }
-
-    return dict
+    return
 
 
-async def create_data_channel(
-    guild: Guild, members: Sequence[Member], channel_ids: dict
-):
-    category = guild.get_channel(get_category_id(channel_ids, "データ"))
+async def create_data_channel(guild: Guild, members: Sequence[Member]):
+    categoryType = ChannelData.get_channel_type("category")
+    textChannelType = ChannelData.get_channel_type("text")
+    categoryId = SqliteConnection.get_channel(guild.id, "データ", categoryType)
+    category = None
+    isInsert = True
+    if categoryId != None:
+        isInsert = False
+        category = guild.get_channel(categoryId)
+
     if category == None:
         category = await guild.create_category("データ")
-
-    dict = {"id": category.id, "channels": {}}
+        SqliteConnection.set_channel(
+            guild.id, category.id, categoryType, "データ", isInsert=isInsert
+        )
 
     # チャンネル名のリスト
     channel_list = ["勝率推移", "マップ", "武器", "編成", "リンク"]
 
     for name in channel_list:
+        isInsert = True
+        channelId = SqliteConnection.get_channel(guild.id, name, textChannelType)
         channel = None
-        if name == "武器":
-            channel = guild.get_channel(
-                get_text_channel_id(channel_ids["データ"]["channels"], name)
+        if channelId != None:
+            isInsert = False
+            channel = guild.get_channel(channelId)
+        if channel == None:
+            channel = await category.create_text_channel(name)
+            SqliteConnection.set_channel(
+                guild.id, channel.id, textChannelType, name, isInsert=isInsert
             )
-            if channel == None:
-                channel = await category.create_text_channel(name)
-        else:
-            channel = guild.get_channel(
-                get_text_channel_id(channel_ids["データ"]["channels"], name)
-            )
-            if channel == None:
-                channel = await category.create_text_channel(name)
-        SqliteConnection.set_channnel(guild.id, channel.id, name)
 
-        dict["channels"][channel.name] = {
-            "id": channel.id,
-            "messages": {},
-            "threads": {},
-        }
-
-    return dict
+    return
 
 
-async def create_archive_channel(
-    guild: Guild, members: Sequence[Member], channel_ids: dict
-):
-    category = guild.get_channel(get_category_id(channel_ids, "アーカイブ"))
+async def create_archive_channel(guild: Guild, members: Sequence[Member]):
+    categoryType = ChannelData.get_channel_type("category")
+    textChannelType = ChannelData.get_channel_type("text")
+    threadType = ChannelData.get_channel_type("thread")
+    categoryId = SqliteConnection.get_channel(guild.id, "アーカイブ", categoryType)
+    category = None
+    isInsert = True
+    if categoryId != None:
+        isInsert = False
+        category = guild.get_channel(categoryId)
+
     if category == None:
         category = await guild.create_category("アーカイブ")
-
-    channels = {}
-    dict = {"id": category.id, "channels": channels}
+        SqliteConnection.set_channel(
+            guild.id, category.id, categoryType, "アーカイブ", isInsert=isInsert
+        )
 
     stage_list = StageData.get_stage_list()
-    resultChannel = guild.get_channel(
-        get_text_channel_id(channel_ids["アーカイブ"]["channels"], "対抗戦結果")
-    )
+
+    resultId = SqliteConnection.get_channel(guild.id, "対抗戦結果", textChannelType)
+    resultChannel = None
+    isInsert = True
+    if resultId != None:
+        isInsert = False
+        resultChannel = guild.get_channel(resultId)
+
     if resultChannel == None:
         resultChannel = await category.create_text_channel("対抗戦結果")
-    channels["対抗戦結果"] = {"id": resultChannel.id, "messages": {}, "threads": {}}
-    SqliteConnection.set_channnel(guild.id, resultChannel.id, "対抗戦結果")
+        SqliteConnection.set_channel(
+            guild.id, resultChannel.id, textChannelType, "対抗戦結果", isInsert=isInsert
+        )
 
-    introspectionChannel = guild.get_channel(
-        get_text_channel_id(channel_ids["アーカイブ"]["channels"], "対抗戦反省")
+    introspectionChannelId = SqliteConnection.get_channel(
+        guild.id, "対抗戦反省", textChannelType
     )
+    introspectionChannel = None
+    isInsert = True
+    if introspectionChannelId != None:
+        isInsert = False
+        introspectionChannel = guild.get_channel(introspectionChannelId)
+
     if introspectionChannel == None:
         introspectionChannel = await category.create_text_channel("対抗戦反省")
-    threads = {}
-    channels["対抗戦反省"] = {
-        "id": introspectionChannel.id,
-        "messages": {},
-        "threads": threads,
-    }
-    SqliteConnection.set_channnel(guild.id, introspectionChannel.id, "対抗戦反省")
+        SqliteConnection.set_channel(
+            guild.id,
+            introspectionChannel.id,
+            textChannelType,
+            "対抗戦反省",
+            isInsert=isInsert,
+        )
     # ResultData.set_result_message(result_message)
 
     thread = None
-    thread_id = get_thread_id(
-        channel_ids["アーカイブ"]["channels"]["対抗戦反省"]["threads"], "全体"
-    )
-
-    try:
-        thread = await guild.fetch_channel(thread_id)
-    except (discord.NotFound, discord.InvalidData, discord.HTTPException):
-        # idがNoneまたはチャンネルが見つからなかった場合なにもしない
-        pass
-    # 存在しない場合全体反省用のスレッドを生成
-    if thread == None:
-        thread = await introspectionChannel.create_thread(name="全体")
-
-    threads["全体"] = {"id": thread.id}
-
-    for stage in reversed(stage_list):
-        thread = None
-        thread_id = get_thread_id(
-            channel_ids["アーカイブ"]["channels"]["対抗戦反省"]["threads"], stage
-        )
-
+    thread_id = SqliteConnection.get_channel(guild.id, "全体", threadType)
+    isInsert = True
+    if thread_id != None:
+        isInsert = False
         try:
             thread = await guild.fetch_channel(thread_id)
         except (discord.NotFound, discord.InvalidData, discord.HTTPException):
             # idがNoneまたはチャンネルが見つからなかった場合なにもしない
             pass
-        # 存在しない場合全体反省用のスレッドを生成
+
+    # 存在しない場合全体反省用のスレッドを生成
+    if thread == None:
+        thread = await introspectionChannel.create_thread(name="全体")
+        SqliteConnection.set_channel(
+            guild.id, category.id, categoryType, "全体", isInsert=isInsert
+        )
+
+    for stage in reversed(stage_list):
+        thread = None
+        isInsert = True
+        thread_id = SqliteConnection.get_channel(guild.id, stage, threadType)
+        if thread_id != None:
+            try:
+                isInsert = False
+                thread = await guild.fetch_channel(thread_id)
+            except (discord.NotFound, discord.InvalidData, discord.HTTPException):
+                # idがNoneまたはチャンネルが見つからなかった場合なにもしない
+                pass
+        # 存在しない場合ステージごと反省用のスレッドを生成
         if thread == None:
             thread = await introspectionChannel.create_thread(name=stage)
             # for member in members:
             #     await thread.add_user(member)
-        threads[stage] = {"id": thread.id, "messages": {}}
+            SqliteConnection.set_channel(
+                guild.id, category.id, categoryType, stage, isInsert=isInsert
+            )
 
-    return dict
+    return
 
 
-async def create_document_channel(
-    guild: Guild, members: Sequence[Member], channel_ids: dict
-):
-    category = guild.get_channel(get_category_id(channel_ids, "ドキュメント"))
+async def create_document_channel(guild: Guild, members: Sequence[Member]):
+    categoryType = ChannelData.get_channel_type("category")
+    textChannelType = ChannelData.get_channel_type("text")
+    categoryId = SqliteConnection.get_channel(guild.id, "ドキュメント", categoryType)
+    category = None
+    isInsert = True
+    if categoryId != None:
+        isInsert = False
+        category = guild.get_channel(categoryId)
+
     if category == None:
         category = await guild.create_category("ドキュメント")
-
-    dict = {"id": category.id, "channels": {}}
+        SqliteConnection.set_channel(
+            guild.id, category.id, categoryType, "ドキュメント", isInsert=isInsert
+        )
 
     # チャンネル名のリスト
     channel_list = ["使い方", "更新情報"]
 
     for name in channel_list:
-        channel = guild.get_channel(
-            get_text_channel_id(channel_ids["ドキュメント"]["channels"], name)
-        )
+        channelId = SqliteConnection.get_channel(guild.id, name, textChannelType)
+        isInsert = True
+        channel = None
+        if channelId != None:
+            isInsert = False
+            channel = guild.get_channel(channelId)
+
         if channel == None:
             channel = await category.create_text_channel(name)
 
-        SqliteConnection.set_channnel(guild.id, channel.id, name)
-        dict["channels"][name] = {"id": channel.id, "messages": {}, "threads": {}}
+        SqliteConnection.set_channel(
+            guild.id, channel.id, textChannelType, name, isInsert=isInsert
+        )
 
-    return dict
+    return
 
 
-async def create_management_channel(
-    guild: Guild, members: Sequence[Member], channel_ids: dict
-):
-    category = guild.get_channel(get_category_id(channel_ids, "管理用"))
+async def create_management_channel(guild: Guild, members: Sequence[Member]):
+    categoryType = ChannelData.get_channel_type("category")
+    textChannelType = ChannelData.get_channel_type("text")
+    categoryId = SqliteConnection.get_channel(guild.id, "管理用", categoryType)
+    category = None
+    isInsert = True
+    if categoryId != None:
+        isInsert = False
+        category = guild.get_channel(categoryId)
+
     if category == None:
         category = await guild.create_category("管理用")
-    dict = {"id": category.id, "channels": {}}
+        SqliteConnection.set_channel(
+            guild.id, category.id, categoryType, "管理用", isInsert=isInsert
+        )
 
     # チャンネル名のリスト
     channel_list = ["コマンド", "ログ"]
 
     for name in channel_list:
-        channel = guild.get_channel(
-            get_text_channel_id(channel_ids["管理用"]["channels"], name)
-        )
+        channelId = SqliteConnection.get_channel(guild.id, name, textChannelType)
+        channel = None
+        isInsert = True
+        if channelId != None:
+            isInsert = False
+            channel = guild.get_channel(channelId)
         if channel == None:
             channel = await category.create_text_channel(name)
+            SqliteConnection.set_channel(
+                guild.id, channel.id, textChannelType, name, isInsert=isInsert
+            )
 
-        SqliteConnection.set_channnel(guild.id, channel.id, name)
-        dict["channels"][name] = {"id": channel.id, "messages": {}, "threads": {}}
-
-    return dict
+    return

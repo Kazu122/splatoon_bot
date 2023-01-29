@@ -1,4 +1,5 @@
 import sqlite3
+from typing import Union
 
 # sqlite3のdbとやりとりをするクラス
 class SqliteConnection:
@@ -114,9 +115,9 @@ class SqliteConnection:
 
             sql = f"""
                 SELECT * FROM TBL_FORMATION
-                    WHERE playerId = ? AND ruleId = ? AND stageId = ? AND weaponId = ?;
+                    WHERE playerId = ? AND ruleId = ? AND stageId = ?;
             """
-            cur.execute(sql, (playerId, ruleId, stageId, weaponId))
+            cur.execute(sql, (playerId, ruleId, stageId))
             formation = cur.fetchone()
             if formation == None:
                 sql = f"""
@@ -131,7 +132,7 @@ class SqliteConnection:
                         SET weaponId = ?
                         WHERE id = ?
                 """
-                cur.execute(sql, (formation[4], formation[0]))
+                cur.execute(sql, (weaponId, formation[0]))
             conn.commit()
         except:
             raise Exception()
@@ -224,8 +225,9 @@ class SqliteConnection:
             raise Exception()
 
     # channelのidを取得する
+    # typeは現状名称被りがないので使用しない
     @classmethod
-    def get_channnel(cls, guildId: int, name: str) -> int:
+    def get_channel(cls, guildId: int, name: str, type: int) -> Union[int, None]:
         conn = cls.get_connection()
         cur = conn.cursor()
         try:
@@ -245,15 +247,27 @@ class SqliteConnection:
             raise Exception()
 
     @classmethod
-    def set_channnel(cls, guildId: int, channelId: int, name: str):
+    def set_channel(
+        cls, guildId: int, channelId: int, channelType: int, name: str, isInsert=True
+    ):
         conn = cls.get_connection()
         cur = conn.cursor()
         try:
-            sql = f"""
-                    INSERT OR IGNORE INTO TBL_CHANNEL(guildId, channelId, name)
-                    VALUES(?, ?, ?);
-                """
-            cur.execute(sql, (str(guildId), str(channelId), name))
+            if isInsert:
+                # 存在しない場合は追加
+                sql = f"""
+                        INSERT OR IGNORE INTO TBL_CHANNEL(guildId, channelId, channelType, name)
+                        VALUES(?, ?, ?, ?);
+                    """
+                cur.execute(sql, (str(guildId), str(channelId), channelType, name))
+            else:
+                # 存在する場合は更新
+                sql = f"""
+                        UPDATE TBL_CHANNEL
+                            SET channelId = ?
+                            WHERE guildId = ? AND channelType = ? AND name = ?;
+                    """
+                cur.execute(sql, (str(channelId), str(guildId), channelType, name))
             conn.commit()
             return
         except:

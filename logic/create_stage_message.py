@@ -1,6 +1,7 @@
 import discord
 from button.StageButton import StageButton
 from data import SqliteConnection
+from data.ChannelData import ChannelData
 from data.ResultData import ResultData
 from data.StageData import StageData
 
@@ -16,13 +17,22 @@ from logic.utils import is_not_pined_message
 async def create_stage_message(ctx: discord.Interaction, rule: str):
     try:
         channel = ctx.channel
-        stage_list = StageData.get_stage_list()
 
         # 結果メッセージ(ピン止めされているメッセージ)以外を消去
         # TODO スレッドも削除
         await channel.purge(check=is_not_pined_message)
 
-        await ctx.message.create_thread(name="全体")
+        # アーカイブチャンネルの取得
+        type = ChannelData.get_channel_type("text")
+        archiveId = SqliteConnection.get_channel(ctx.guild_id, "対抗戦反省", type)
+        archive = ctx.guild.get_channel(archiveId)
+        archiveThreads = {thread.name: thread for thread in archive.threads}
+
+        overallThread = await ctx.message.create_thread(name="全体")
+        overallArchive = archiveThreads["全体"]
+        messages = [message async for message in overallArchive.history(limit=3)]
+        for message in messages:
+            await overallThread.send(embeds=message.embeds)
 
         # 結果メッセージの内容を初期化
         ResultData.init_result()
@@ -65,5 +75,10 @@ async def create_stage_message(ctx: discord.Interaction, rule: str):
             await thread.send(files=files, embeds=embeds)
             # for member in members:
             #     await thread.add_user(member)
+
+            baseThread = archiveThreads[stage]
+            messages = [message async for message in baseThread.history(limit=3)]
+            for message in messages:
+                await thread.send(embeds=message.embeds)
     except Exception:
         raise

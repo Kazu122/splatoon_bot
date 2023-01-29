@@ -39,34 +39,13 @@ client = MyClient(intents=intents)
 # サーバーの初期化を行う
 # TODO チャンネルが存在する場合は生成処理スキップ
 async def init(guild: Guild):
-    server_structure = {}
+    members = guild.members
 
-    if not (os.path.exists("./channelIds.json")):
-        with open("./channelIds.json", "w", encoding="utf-8") as f:
-            json.dump({}, f, ensure_ascii=False, indent=4)
-
-    with open("./channelIds.json", "r", encoding="utf-8") as f:
-        channel_ids = json.load(f)
-        members = guild.members
-
-        server_structure["対抗戦記録用"] = await create_main_channel(
-            guild, members, channel_ids
-        )
-        server_structure["データ"] = await create_data_channel(guild, members, channel_ids)
-        server_structure["アーカイブ"] = await create_archive_channel(
-            guild, members, channel_ids
-        )
-        server_structure["ドキュメント"] = await create_document_channel(
-            guild, members, channel_ids
-        )
-        server_structure["管理用"] = await create_management_channel(
-            guild, members, channel_ids
-        )
-
-        print(server_structure)
-
-    with open("./channelIds.json", "w", encoding="utf-8") as f:
-        json.dump(server_structure, f, ensure_ascii=False, indent=4)
+    await create_main_channel(guild, members)
+    await create_data_channel(guild, members)
+    await create_archive_channel(guild, members)
+    await create_document_channel(guild, members)
+    await create_management_channel(guild, members)
 
 
 # TODO: チャンネルが存在する場合に取得してresult_messageをセットする

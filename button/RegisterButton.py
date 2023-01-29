@@ -1,9 +1,10 @@
 import discord
 from discord import Interaction
 from discord import ButtonStyle
+from data.ChannelData import ChannelData
 from data.ResultData import ResultData
 from data.SqliteConnection import SqliteConnection
-from logic.create_embed import create_result_embed
+from logic.create_embed import create_archive_embed, create_result_embed
 from logic.create_stage_message import create_stage_message
 from logic.utils import is_not_pined_message
 from spreadsheet.PostGasScript import PostGasScript
@@ -32,9 +33,9 @@ class RuleButton(discord.ui.Button):
             await ctx.followup.send("メッセージの作成に失敗しました")
 
 
-class WinButton(discord.ui.Button):
+class AddButton(discord.ui.Button):
     def __init__(
-        self, label: str = "win", style: ButtonStyle = ButtonStyle.success, row: int = 3
+        self, label: str = "add", style: ButtonStyle = ButtonStyle.success, row: int = 1
     ):
         super().__init__(label=label, style=style, row=row)
 
@@ -48,27 +49,9 @@ class WinButton(discord.ui.Button):
         # await ctx.followup.send("win", delete_after=60)
 
 
-class LoseButton(discord.ui.Button):
-    def __init__(
-        self,
-        label: str = "lose",
-        style: ButtonStyle = ButtonStyle.primary,
-        row: int = 3,
-    ):
-        super().__init__(label=label, style=style, row=row)
-
-    async def callback(self, ctx: Interaction):
-        await ctx.response.send_message("lose", delete_after=60)
-        PostGasScript.post("addMatch")
-        ResultData.add_result()
-        message = ResultData.get_result_message()
-        embed = create_result_embed()
-        await message.edit(embed=embed)
-
-
 class FinishButton(discord.ui.Button):
     def __init__(
-        self, label: str = "fin", style: ButtonStyle = ButtonStyle.success, row: int = 3
+        self, label: str = "fin", style: ButtonStyle = ButtonStyle.primary, row: int = 1
     ):
         super().__init__(label=label, style=style, row=row)
 
@@ -77,14 +60,34 @@ class FinishButton(discord.ui.Button):
         OperateSpreadSheet.set_result_data()
         ResultData.init_result()
         PostGasScript.post("registerResult")
-        # 結果メッセージ(ピン止めされているメッセージ)以外を消去
+
+        # メッセージをコピーしスレッドを削除
+        type = ChannelData.get_channel_type("text")
+        archiveId = SqliteConnection.get_channel(ctx.guild_id, "対抗戦反省", type)
+        archive = ctx.guild.get_channel(archiveId)
+        archiveThreads = {thread.name: thread for thread in archive.threads}
         for thread in ctx.channel.threads:
+            messages = [
+                message
+                async for message in thread.history()
+                if not (message.author.bot)
+            ]
+            embeds = []
+            for message in messages:
+                embeds.append(create_archive_embed(message))
+            # 空の場合は追加しない
+            if len(embeds) > 0:
+                target = archiveThreads[thread.name]
+                await target.send(embeds=embeds)
             await thread.delete()
+
+        # 結果メッセージ(ピン止めされているメッセージ)以外を消去
         await ctx.channel.purge(check=is_not_pined_message)
+
         message = ResultData.get_result_message()
 
         oldEmbed = message.embeds[0]
-        archiveId = SqliteConnection.get_channnel(ctx.guild_id, "対抗戦結果")
+        archiveId = SqliteConnection.get_channel(ctx.guild_id, "対抗戦結果", type)
         resultArchive = ctx.guild.get_channel(archiveId)
         await resultArchive.send(embed=oldEmbed)
         embed = create_result_embed()
@@ -93,7 +96,7 @@ class FinishButton(discord.ui.Button):
 
 class DeleteButton(discord.ui.Button):
     def __init__(
-        self, label: str = "del", style: ButtonStyle = ButtonStyle.danger, row: int = 3
+        self, label: str = "del", style: ButtonStyle = ButtonStyle.danger, row: int = 1
     ):
         super().__init__(label=label, style=style, row=row)
 
@@ -115,7 +118,7 @@ class InitButton(discord.ui.Button):
         self,
         label: str = "init",
         style: ButtonStyle = ButtonStyle.secondary,
-        row: int = 4,
+        row: int = 1,
     ):
         super().__init__(label=label, style=style, row=row)
 
@@ -145,8 +148,7 @@ class SelectRuleButton(discord.ui.View):
 class RegisterButton(discord.ui.View):
     def __init__(self):
         super().__init__()
-        self.add_item(WinButton())
-        self.add_item(LoseButton())
-        self.add_item(FinishButton())
+        self.add_item(AddButton())
         self.add_item(DeleteButton())
+        self.add_item(FinishButton())
         self.add_item(InitButton())
