@@ -11,6 +11,7 @@ from logic.create_embed import (
     create_stage_embed,
 )
 from logic.utils import is_not_pined_message
+from spreadsheet.connect_sheet import OperateSpreadSheet
 
 # ルールボタンを押した際の処理
 # TODO: フラグを設けてボタン押下後からfinを押すまで動作しないようにする
@@ -18,8 +19,14 @@ async def create_stage_message(ctx: discord.Interaction, rule: str):
     try:
         channel = ctx.channel
 
+        d = OperateSpreadSheet.get_all_term_data()
+        totalizeData = {
+            array[0]: {"win": int(array[1]), "lose": int(array[2])} for array in d
+        }
+
         # 結果メッセージ(ピン止めされているメッセージ)以外を消去
-        # TODO スレッドも削除
+        for thread in ctx.channel.threads:
+            await thread.delete()
         await channel.purge(check=is_not_pined_message)
 
         # アーカイブチャンネルの取得
@@ -47,16 +54,21 @@ async def create_stage_message(ctx: discord.Interaction, rule: str):
             file = discord.File(
                 fp=f"./img/stage/{stage}.png", filename=fname, spoiler=False
             )
-            embed = create_stage_embed(fname)
-
-            message = await channel.send(
-                file=file, embed=embed, view=StageButton(stage=stage)
-            )
+            # embed = create_stage_embed(fname)
+            message = await channel.send(file=file, view=StageButton(stage=stage))
 
             thread = await message.create_thread(name=stage)
             embeds = []
             member = SqliteConnection.get_member_data(ctx.guild_id)
             files = []
+
+            win = totalizeData[stage]["win"]
+            lose = totalizeData[stage]["lose"]
+            win_rate = round(win / (win + lose), 2)
+            embed = discord.Embed(title="戦績", color=0x00FF00)
+            embed.add_field(name="全期間", value=f"勝率: {win_rate}%({win}勝{lose}敗)")
+            embed.add_field(name="直近", value=f"勝率: (　勝　敗)")
+            embeds.append(embed)
             for playerId, player in member:
                 # print(f"{ruleId}, {playerId}, {stageId}")
                 fname = f"s_{stageId}_p_{playerId}.jpg"

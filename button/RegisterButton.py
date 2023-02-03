@@ -26,11 +26,13 @@ class RuleButton(discord.ui.Button):
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message(self.rule, delete_after=60)
         try:
+            await ctx.message.edit(view=None)
             await create_stage_message(ctx, self.rule)
             await ctx.message.edit(view=RegisterButton())
         except:
             traceback.print_exc()
             await ctx.followup.send("メッセージの作成に失敗しました")
+            await ctx.message.edit(view=SelectRuleButton())
 
 
 class AddButton(discord.ui.Button):
@@ -41,7 +43,9 @@ class AddButton(discord.ui.Button):
 
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message("win", delete_after=60)
-        PostGasScript.post("addMatch")
+        success = PostGasScript.post("addMatch")
+        print(f"success: {success}")
+
         ResultData.add_result()
         message = ResultData.get_result_message()
         embed = create_result_embed()
@@ -59,7 +63,8 @@ class FinishButton(discord.ui.Button):
         await ctx.response.send_message("fin", delete_after=60)
         OperateSpreadSheet.set_result_data()
         ResultData.init_result()
-        PostGasScript.post("registerResult")
+        success = PostGasScript.post("registerResult")
+        print(f"success: {success}")
 
         # メッセージをコピーしスレッドを削除
         type = ChannelData.get_channel_type("text")
@@ -109,7 +114,7 @@ class DeleteButton(discord.ui.Button):
         PostGasScript.post("deleteMatch")
         message = ResultData.get_result_message()
         embed = create_result_embed()
-        await message.edit(embed=embed, view=SelectRuleButton())
+        await message.edit(embed=embed)
 
 
 # TODO: シートも初期化
@@ -124,14 +129,17 @@ class InitButton(discord.ui.Button):
 
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message("init", delete_after=60)
+        message = ResultData.get_result_message()
+        embed = create_result_embed()
+        await message.edit(embed=embed, view=SelectRuleButton())
         ResultData.init_result()
+        success = PostGasScript.post("init")
         # 結果メッセージ(ピン止めされているメッセージ)以外を消去
         for thread in ctx.channel.threads:
             await thread.delete()
         await ctx.channel.purge(check=is_not_pined_message)
-        message = ResultData.get_result_message()
-        embed = create_result_embed()
-        await message.edit(embed=embed)
+
+        print(f"success: {success}")
 
 
 # TODO: 状態に応じて表示するボタンを変える

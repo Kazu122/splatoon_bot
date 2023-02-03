@@ -20,7 +20,8 @@ class OperateSpreadSheet:
     # Find a workbook by name and open the first sheet
     # Make sure you use the right name here.
     sheet = client.open_by_key(SHEET_KEY).worksheet("入力")
-    formationSheet = client.open_by_key(SHEET_KEY).worksheet("武器編成")
+    formation_sheet = client.open_by_key(SHEET_KEY).worksheet("武器編成")
+    totalizeSheet = client.open_by_key(SHEET_KEY).worksheet("集計")
 
     @classmethod
     def set_result_data(cls):
@@ -34,11 +35,12 @@ class OperateSpreadSheet:
         # print(update_data)
         cls.sheet.update("C9", update_data)
 
+    # 編成データを取得する
     @classmethod
     def get_formation_data(cls):
         stage_data = SqliteConnection.get_stage_data()
         stage_num = len(stage_data)
-        sheet_data: list[list[any]] = cls.formationSheet.get_values(
+        sheet_data: list[list[any]] = cls.formation_sheet.get_values(
             f"B5:D{stage_num * 4 + 4}"
         )
         stage = None
@@ -47,4 +49,14 @@ class OperateSpreadSheet:
                 stage = data[0]
             else:
                 data[0] = stage
+        return sheet_data
+
+    # 集計データを取得する
+    @classmethod
+    def get_all_term_data(cls):
+        stage_data = SqliteConnection.get_stage_data()
+        stage_num = len(stage_data)
+        sheet_data: list[list[any]] = cls.totalizeSheet.get_values(
+            f"B5:E{stage_num + 4}"
+        )
         return sheet_data
