@@ -61,6 +61,8 @@ class FinishButton(discord.ui.Button):
 
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message("fin", delete_after=60)
+        message = ResultData.get_result_message()
+        await message.edit(view=None)
         OperateSpreadSheet.set_result_data()
         ResultData.init_result()
         success = PostGasScript.post("registerResult")
@@ -88,8 +90,6 @@ class FinishButton(discord.ui.Button):
 
         # 結果メッセージ(ピン止めされているメッセージ)以外を消去
         await ctx.channel.purge(check=is_not_pined_message)
-
-        message = ResultData.get_result_message()
 
         oldEmbed = message.embeds[0]
         archiveId = SqliteConnection.get_channel(ctx.guild_id, "対抗戦結果", type)

@@ -39,7 +39,7 @@ def create_archive_embed(message: discord.Message):
     content = message.content
     embed = discord.Embed(color=0x00FF00)
     embed.set_author(name=author)
-    day = "{0: %Y/%m%d}".format(message.created_at)
+    day = "{0: %Y/%m/%d}".format(message.created_at)
     embed.add_field(name=day, value=content)
 
     return embed
