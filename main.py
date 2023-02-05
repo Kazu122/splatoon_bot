@@ -108,15 +108,15 @@ async def on_guild_remove(guild: Guild):
 
 
 # testコマンド: テスト用
-@client.tree.command(name="test", description="test")
-async def test(ctx: Interaction):
-    await ctx.response.send_message(f"hello World")
+# @client.tree.command(name="test", description="test")
+# async def test(ctx: Interaction):
+#     await ctx.response.send_message(f"hello World", delete_after=30)
 
 
 # setupコマンド: サーバーの初期設定を行う
 @client.tree.command(name="setup", description="初期設定を行います")
 async def setup(ctx: Interaction):
-    await ctx.response.send_message(f"setup中")
+    await ctx.response.send_message(f"setup中", delete_after=120)
     await init(ctx.guild)
     await ctx.followup.send(f"setup完了")
 
@@ -124,6 +124,7 @@ async def setup(ctx: Interaction):
 # clearコマンド: チャンネルを全消去する
 @client.tree.command(name="clear", description="チャンネルをすべて削除します")
 async def clear(ctx: Interaction):
+    await ctx.response.send_message(f"clear", delete_after=30)
     channels = await ctx.guild.fetch_channels()
     for channel in channels:
         await channel.delete()
@@ -137,7 +138,7 @@ async def clear(ctx: Interaction):
 async def register_member(
     ctx: Interaction, member1: str, member2: str, member3: str, member4: str
 ):
-    await ctx.response.send_message(f"hello World")
+    await ctx.response.send_message(f"register member", delete_after=30)
     members = [member1, member2, member3, member4]
     conn = SqliteConnection.get_connection()
     cur = conn.cursor()
@@ -174,7 +175,7 @@ async def register_member(
 async def edit_weapon(
     ctx: Interaction, rule: str, stage: str, member: str, weapon: str
 ):
-    await ctx.response.send_message(f"edit")
+    await ctx.response.send_message(f"edit weapon", delete_after=30)
     conn = SqliteConnection.get_connection()
     cur = conn.cursor()
     try:
