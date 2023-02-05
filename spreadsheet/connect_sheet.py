@@ -1,9 +1,12 @@
 import datetime as dt
+import os
+from dotenv import load_dotenv
 import gspread
 from gspread import utils
 from data import SqliteConnection
 from data.ResultData import ResultData
 from oauth2client.service_account import ServiceAccountCredentials
+from spreadsheet.client_secret import secret_json
 
 # スプレッドシート操作用クラス
 class OperateSpreadSheet:
@@ -12,8 +15,9 @@ class OperateSpreadSheet:
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive",
     ]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "client_secret.json", scope
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        secret_json,
+        scope,
     )
     client = gspread.authorize(creds)
 
