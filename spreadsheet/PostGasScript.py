@@ -7,6 +7,7 @@ class PostGasScript:
     url = "https://script.google.com/macros/s/AKfycbzKVNp-A6zqAHbOat1eDEcnAhd6bvUWKAyTEn_kB8MgbNzDqKfn5LMvt7YRUhtH4ZIBEg/exec"
     headers = {"Content-Type": "application/json"}
 
+    # TODO: なぜかfalseが返る、要確認
     @classmethod
     def post(cls, type, data=""):
         payload = {"type": type, "data": data}
