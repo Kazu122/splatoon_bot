@@ -133,4 +133,5 @@ client_secret.json
 channelIds.json
 
 # db
-.db
+*.db
+*.db3
