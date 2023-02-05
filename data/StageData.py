@@ -19,6 +19,10 @@ class StageData:
     ]
 
     @classmethod
+    def set_stage_list(cls):
+        return cls._stage_list
+
+    @classmethod
     def get_stage_list(cls):
         return cls._stage_list
 

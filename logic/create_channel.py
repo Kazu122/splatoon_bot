@@ -1,6 +1,7 @@
 from typing import Sequence
 import discord
 from discord import CategoryChannel, Guild, Interaction, Member, TextChannel
+from button.SearchMap import SearchView
 from data.ChannelData import ChannelData
 from data.SqliteConnection import SqliteConnection
 from data.StageData import StageData
@@ -121,14 +122,22 @@ async def create_data_channel(guild: Guild, members: Sequence[Member]):
         isInsert = True
         channelId = SqliteConnection.get_channel(guild.id, name, textChannelType)
         channel = None
+
         if channelId != None:
             isInsert = False
             channel = guild.get_channel(channelId)
+            await channel.purge()
         if channel == None:
             channel = await category.create_text_channel(name)
             SqliteConnection.set_channel(
                 guild.id, channel.id, textChannelType, name, isInsert=isInsert
             )
+
+        if name == "マップ":
+            embed = discord.Embed(title="マップの検索", color=0x00FF00)
+            embed.add_field(name="使い方", value="ドロップダウンでステージ名を選択すると、選択したマップが表示されます")
+            message = await channel.send(embed=embed, view=SearchView())
+            await message.pin()
 
     return
 
