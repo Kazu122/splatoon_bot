@@ -1,4 +1,6 @@
+import datetime as dt
 import gspread
+from gspread import utils
 from data import SqliteConnection
 from data.ResultData import ResultData
 from oauth2client.service_account import ServiceAccountCredentials
@@ -22,6 +24,7 @@ class OperateSpreadSheet:
     sheet = client.open_by_key(SHEET_KEY).worksheet("入力")
     formation_sheet = client.open_by_key(SHEET_KEY).worksheet("武器編成")
     totalizeSheet = client.open_by_key(SHEET_KEY).worksheet("集計")
+    termTotalizeSheet = client.open_by_key(SHEET_KEY).worksheet("期間集計")
 
     @classmethod
     def set_result_data(cls):
@@ -60,3 +63,29 @@ class OperateSpreadSheet:
             f"B5:E{stage_num + 4}"
         )
         return sheet_data
+
+    # 今月の勝率を取得
+    @classmethod
+    def get_recently_data(cls):
+        try:
+            stage_data = SqliteConnection.get_stage_data()
+            stage_num = len(stage_data)
+            most_old_month = dt.datetime.strptime(
+                cls.termTotalizeSheet.cell(4, 3).value, "%Y/%m"
+            )
+            now = dt.datetime.now()
+            diff = (
+                (now.year - most_old_month.year) * 12 + now.month - most_old_month.month
+            )
+            head = cls.termTotalizeSheet.cell(4, 3 + diff)
+            if head == "":
+                return None
+            start = cls.termTotalizeSheet.cell(5, 3 + diff).address
+            end = cls.termTotalizeSheet.cell(stage_num + 4, 3 + diff).address
+            range = f"{start}:{end}"
+            sheet_data: list[list[any]] = cls.totalizeSheet.get_values(f"{range}")
+            if len(sheet_data) == 0:
+                return None
+            return sheet_data
+        except:
+            return None

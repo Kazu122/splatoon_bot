@@ -19,10 +19,19 @@ async def create_stage_message(ctx: discord.Interaction, rule: str):
     try:
         channel = ctx.channel
 
+        # 全期間の集計データ
         d = OperateSpreadSheet.get_all_term_data()
         totalizeData = {
             array[0]: {"win": int(array[1]), "lose": int(array[2])} for array in d
         }
+
+        # 今月の集計データ
+        d = OperateSpreadSheet.get_recently_data()
+        monthlyData = None
+        if d != None:
+            monthlyData = {
+                array[0]: {"win": int(array[1]), "lose": int(array[2])} for array in d
+            }
 
         # 結果メッセージ(ピン止めされているメッセージ)以外を消去
         for thread in ctx.channel.threads:
@@ -62,12 +71,20 @@ async def create_stage_message(ctx: discord.Interaction, rule: str):
             member = SqliteConnection.get_member_data(ctx.guild_id)
             files = []
 
+            embed = discord.Embed(title="戦績", color=0x00FF00)
             win = totalizeData[stage]["win"]
             lose = totalizeData[stage]["lose"]
             win_rate = round(win / (win + lose), 2)
-            embed = discord.Embed(title="戦績", color=0x00FF00)
             embed.add_field(name="全期間", value=f"勝率: {win_rate}%({win}勝{lose}敗)")
-            embed.add_field(name="直近", value=f"勝率: (　勝　敗)")
+            if monthlyData != None:
+                win = monthlyData[stage]["win"]
+                lose = monthlyData[stage]["lose"]
+                win_rate = round(win / (win + lose), 2)
+            else:
+                win = "-"
+                lose = "-"
+                win_rate = "-"
+            embed.add_field(name="今月", value=f"勝率: {win_rate}%({win}勝{lose}敗)")
             embeds.append(embed)
             for playerId, player in member:
                 # print(f"{ruleId}, {playerId}, {stageId}")

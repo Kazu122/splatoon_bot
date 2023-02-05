@@ -40,3 +40,4 @@ urllib3
 webdriver-manager
 wsproto
 yarl
+sqlite3
