@@ -24,7 +24,7 @@ def create_stage_embed(fname: str):
 
 def create_player_embed(player: str, WeaponData: list[str, str, str], fname: str):
     embed = discord.Embed(title=player, color=0x00FF00)
-    print(WeaponData)
+    # print(WeaponData)
     name, sub, special = WeaponData
     if name != "未設定":
         embed.set_thumbnail(url=f"attachment://{fname}")

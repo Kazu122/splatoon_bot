@@ -126,12 +126,13 @@ async def create_data_channel(guild: Guild, members: Sequence[Member]):
         if channelId != None:
             isInsert = False
             channel = guild.get_channel(channelId)
-            await channel.purge()
         if channel == None:
             channel = await category.create_text_channel(name)
             SqliteConnection.set_channel(
                 guild.id, channel.id, textChannelType, name, isInsert=isInsert
             )
+        else:
+            await channel.purge()
 
         if name == "マップ":
             embed = discord.Embed(title="マップの検索", color=0x00FF00)
