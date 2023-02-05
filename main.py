@@ -12,9 +12,6 @@ from data import SqliteConnection
 load_dotenv()
 
 TOKEN = os.environ.get("TOKEN")
-GUILD_ID = os.environ.get("GUILD_ID")
-
-MY_GUILD = discord.Object(id=GUILD_ID)
 
 
 class MyClient(commands.Bot):
@@ -67,7 +64,7 @@ async def on_guild_join(guild: Guild):
     try:
         cur = SqliteConnection.get_connection().cursor()
         sql = (
-            "PRAGMA forreign_keys=true;" "INSERT INTO TBL_GUILD(id, name) values(?, ?);"
+            "PRAGMA foreign_keys=true;" "INSERT INTO TBL_GUILD(id, name) values(?, ?);"
         )
         cur.execute(sql, (guild.id, guild.name))
     except Exception as e:
@@ -84,7 +81,7 @@ async def on_guild_update(before: Guild, after: Guild):
     try:
         cur = SqliteConnection.get_connection().cursor()
         sql = (
-            "PRAGMA forreign_keys=true;"
+            "PRAGMA foreign_keys=true;"
             "UPDATE INTO TBL_GUILD SET name = ? WHERE id = ?;"
         )
         cur.execute(sql, after.name, before.id)
@@ -101,7 +98,7 @@ async def on_guild_remove(guild: Guild):
     cur = None
     try:
         cur = SqliteConnection.get_connection().cursor()
-        sql = "PRAGMA forreign_keys=true;" "DELETE FROM TBL_GUILD WHERE id = ?;"
+        sql = "PRAGMA foreign_keys=true;" "DELETE FROM TBL_GUILD WHERE id = ?;"
         cur.execute(sql, (guild.id,))
     except Exception as e:
         print(e)
