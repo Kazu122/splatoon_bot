@@ -34,7 +34,6 @@ intents = discord.Intents.all()  # Intentsオブジェクトを生成
 client = MyClient(intents=intents)
 
 # サーバーの初期化を行う
-# TODO チャンネルが存在する場合は生成処理スキップ
 async def init(guild: Guild):
     members = guild.members
 

@@ -61,15 +61,21 @@ class FinishButton(discord.ui.Button):
 
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message("fin", delete_after=60)
-        message = ResultData.get_result_message()
+        type = ChannelData.get_channel_type("text")
+        message = ctx.message
         await message.edit(view=None)
         OperateSpreadSheet.set_result_data()
-        ResultData.init_result()
+
+        oldEmbed = message.embeds[0]
+        archiveId = SqliteConnection.get_channel(ctx.guild_id, "対抗戦結果", type)
+        resultArchive = ctx.guild.get_channel(archiveId)
+        await resultArchive.send(embed=oldEmbed)
+
         success = PostGasScript.post("registerResult")
         print(f"success: {success}")
 
         # メッセージをコピーしスレッドを削除
-        type = ChannelData.get_channel_type("text")
+
         archiveId = SqliteConnection.get_channel(ctx.guild_id, "対抗戦反省", type)
         archive = ctx.guild.get_channel(archiveId)
         archiveThreads = {thread.name: thread for thread in archive.threads}
@@ -91,10 +97,7 @@ class FinishButton(discord.ui.Button):
         # 結果メッセージ(ピン止めされているメッセージ)以外を消去
         await ctx.channel.purge(check=is_not_pined_message)
 
-        oldEmbed = message.embeds[0]
-        archiveId = SqliteConnection.get_channel(ctx.guild_id, "対抗戦結果", type)
-        resultArchive = ctx.guild.get_channel(archiveId)
-        await resultArchive.send(embed=oldEmbed)
+        ResultData.init_result()
         embed = create_result_embed()
         await message.edit(embed=embed, view=SelectRuleButton())
 
@@ -129,23 +132,22 @@ class InitButton(discord.ui.Button):
 
     async def callback(self, ctx: Interaction):
         await ctx.response.send_message("init", delete_after=60)
-        message = ResultData.get_result_message()
-        embed = create_result_embed()
-        await message.edit(embed=embed, view=SelectRuleButton())
+        await ctx.message.edit(view=None)
         ResultData.init_result()
+        embed = create_result_embed()
         success = PostGasScript.post("init")
         # 結果メッセージ(ピン止めされているメッセージ)以外を消去
         for thread in ctx.channel.threads:
             await thread.delete()
         await ctx.channel.purge(check=is_not_pined_message)
+        await ctx.message.edit(embed=embed, view=SelectRuleButton())
 
         print(f"success: {success}")
 
 
-# TODO: 状態に応じて表示するボタンを変える
 class SelectRuleButton(discord.ui.View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=None)
         self.add_item(RuleButton(rule="ナワバリバトル", label="ナワバリ", row=1))
         self.add_item(RuleButton(rule="ガチエリア", label="エリア", row=1))
         self.add_item(RuleButton(rule="ガチヤグラ", label="ヤグラ", row=1))
@@ -155,7 +157,7 @@ class SelectRuleButton(discord.ui.View):
 
 class RegisterButton(discord.ui.View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=None)
         self.add_item(AddButton())
         self.add_item(DeleteButton())
         self.add_item(FinishButton())

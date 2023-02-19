@@ -31,7 +31,7 @@ class MapSelect(discord.ui.Select):
 # map画像を選択するドロップダウン
 class SearchView(discord.ui.View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=None)
         stage_list = StageData.get_stage_list()
         stage_options = [discord.SelectOption(label=stage) for stage in stage_list]
         self.add_item(MapSelect(placeholder="Map", options=stage_options))

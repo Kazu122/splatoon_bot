@@ -56,7 +56,7 @@ class InitButton(Button):
 
 class StageButton(discord.ui.View):
     def __init__(self, stage: str):
-        super().__init__()
+        super().__init__(timeout=None)
         self.add_item(WinButton(stage=stage))
         self.add_item(LoseButton(stage=stage))
         self.add_item(InitButton(stage=stage))
